@@ -1,5 +1,8 @@
 ## Image Captioning Plugin
 
+![image_captioning](https://github.com/jacobmarks/fiftyone-image-captioning-plugin/assets/12500356/224503c0-c3ac-4925-8c9d-ecfe50d493cc)
+
+
 ## Plugin Overview
 
 This plugin lets you generate and store captions for your samples using
