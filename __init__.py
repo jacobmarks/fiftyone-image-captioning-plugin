@@ -1,4 +1,4 @@
-"""VQA plugin.
+"""Image Captioning plugin.
 
 | Copyright 2017-2023, Voxel51, Inc.
 | `voxel51.com <https://voxel51.com/>`_
@@ -191,15 +191,11 @@ def run_hf_model(sample, model_name):
     return res["generated_text"]
 
 
-def caption_images(sample_collection, model_name, caption_field):
-    def _apply_model(sample):
-        if model_name in HF_I2T_MODELS:
-            return run_hf_model(sample, model_name)
-        else:
-            return REPLCATE_MODELS[model_name](sample)
-
-    for sample in sample_collection.iter_samples(autosave=True, progress=True):
-        sample[caption_field] = _apply_model(sample)
+def generate_sample_caption(sample, model_name):
+    if model_name in HF_I2T_MODELS:
+        return run_hf_model(sample, model_name)
+    else:
+        return REPLCATE_MODELS[model_name](sample)
 
 
 class CaptionImages(foo.Operator):
@@ -209,6 +205,7 @@ class CaptionImages(foo.Operator):
             name="caption_images",
             label="Caption Images",
             dynamic=True,
+            execute_as_generator=True,
         )
         _config.icon = "/assets/icon.svg"
         return _config
@@ -260,12 +257,34 @@ class CaptionImages(foo.Operator):
         _execution_mode(ctx, inputs)
         return types.Property(inputs, view=form_view)
 
-    def execute(self, ctx):
-        view = _get_target_view(ctx, ctx.params["target"])
+    async def execute(self, ctx):
+        sample_collection = _get_target_view(ctx, ctx.params["target"])
         model_name = ctx.params["model_name"]
         caption_field = ctx.params["caption_field"]
-        caption_images(view, model_name, caption_field)
-        ctx.trigger("reload_dataset")
+
+        ctx.dataset.add_sample_field(caption_field, ftype=fo.StringField)
+
+        num_samples = sample_collection.count()
+        captions = []
+
+        for i, sample in enumerate(
+            sample_collection.iter_samples(progress=True, autosave=True)
+        ):
+            captions.append(generate_sample_caption(sample, model_name))
+
+            progress_label = f"Loading {i} of {num_samples}"
+            progress_view = types.ProgressView(label=progress_label)
+            loading_schema = types.Object()
+            loading_schema.int("percent_complete", view=progress_view)
+            show_output_params = {
+                "outputs": types.Property(loading_schema).to_json(),
+                "results": {"percent_complete": i / num_samples},
+            }
+            yield ctx.trigger("show_output", show_output_params)
+
+        sample_collection.set_values(caption_field, captions)
+        sample_collection.save()
+        yield ctx.trigger("reload_dataset")
 
     def resolve_delegation(self, ctx):
         return ctx.params.get("delegate", False)
