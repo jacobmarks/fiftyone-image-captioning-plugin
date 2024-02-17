@@ -73,52 +73,52 @@ def _execution_mode(ctx, inputs):
         )
 
 
-def _get_target_view(ctx, target):
-    if target == "SELECTED_SAMPLES":
-        return ctx.view.select(ctx.selected)
+# def _get_target_view(ctx, target):
+#     if target == "SELECTED_SAMPLES":
+#         return ctx.view.select(ctx.selected)
 
-    if target == "DATASET":
-        return ctx.dataset
+#     if target == "DATASET":
+#         return ctx.dataset
 
-    return ctx.view
+#     return ctx.view
 
 
-def _list_target_views(ctx, inputs):
-    has_view = ctx.view != ctx.dataset.view()
-    has_selected = bool(ctx.selected)
-    default_target = "DATASET"
-    if has_view or has_selected:
-        target_choices = types.RadioGroup()
-        target_choices.add_choice(
-            "DATASET",
-            label="Entire dataset",
-            description="Run model on the entire dataset",
-        )
+# def _list_target_views(ctx, inputs):
+#     has_view = ctx.view != ctx.dataset.view()
+#     has_selected = bool(ctx.selected)
+#     default_target = "DATASET"
+#     if has_view or has_selected:
+#         target_choices = types.RadioGroup()
+#         target_choices.add_choice(
+#             "DATASET",
+#             label="Entire dataset",
+#             description="Run model on the entire dataset",
+#         )
 
-        if has_view:
-            target_choices.add_choice(
-                "CURRENT_VIEW",
-                label="Current view",
-                description="Run model on the current view",
-            )
-            default_target = "CURRENT_VIEW"
+#         if has_view:
+#             target_choices.add_choice(
+#                 "CURRENT_VIEW",
+#                 label="Current view",
+#                 description="Run model on the current view",
+#             )
+#             default_target = "CURRENT_VIEW"
 
-        if has_selected:
-            target_choices.add_choice(
-                "SELECTED_SAMPLES",
-                label="Selected samples",
-                description="Run model on the selected samples",
-            )
-            default_target = "SELECTED_SAMPLES"
+#         if has_selected:
+#             target_choices.add_choice(
+#                 "SELECTED_SAMPLES",
+#                 label="Selected samples",
+#                 description="Run model on the selected samples",
+#             )
+#             default_target = "SELECTED_SAMPLES"
 
-        inputs.enum(
-            "target",
-            target_choices.values(),
-            default=default_target,
-            view=target_choices,
-        )
-    else:
-        ctx.params["target"] = "DATASET"
+#         inputs.enum(
+#             "target",
+#             target_choices.values(),
+#             default=default_target,
+#             view=target_choices,
+#         )
+#     else:
+#         ctx.params["target"] = "DATASET"
 
 
 def run_qwen_vl_chat(sample):
@@ -253,12 +253,12 @@ class CaptionImages(foo.Operator):
             required=True,
         )
 
-        _list_target_views(ctx, inputs)
+        inputs.view_target(ctx)
         _execution_mode(ctx, inputs)
         return types.Property(inputs, view=form_view)
 
     async def execute(self, ctx):
-        sample_collection = _get_target_view(ctx, ctx.params["target"])
+        sample_collection = ctx.target_view()
         model_name = ctx.params["model_name"]
         caption_field = ctx.params["caption_field"]
 

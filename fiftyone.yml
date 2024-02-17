@@ -1,7 +1,7 @@
 fiftyone:
-  version: ">=0.23.0"
+  version: ">=0.23.5"
 name: "@jacobmarks/image_captioning"
-version: "1.0.2"
+version: "1.0.3"
 description: "Generate captions for images with state-of-the-art models"
 url: "https://github.com/jacobmarks/fiftyone-image-captioning-plugin"
 operators:
