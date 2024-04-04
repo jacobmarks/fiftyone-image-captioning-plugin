@@ -236,7 +236,7 @@ class CaptionImages(foo.Operator):
 
         sample_collection.set_values(caption_field, captions)
         sample_collection.save()
-        yield ctx.trigger("reload_dataset")
+        yield ctx.ops.reload_dataset()
 
     def resolve_delegation(self, ctx):
         return ctx.params.get("delegate", False)
